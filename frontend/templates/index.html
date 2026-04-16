@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Interview System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="center-box">
+    <h1>AI Interview Evaluation System</h1>
+    <p>Select your department to begin</p>
+    <form action="/start" method="POST">
+        <select name="department" required>
+            <option value="">Select Department</option>
+            <option value="CSE">Computer Science</option>
+            <option value="ECE">Electronics</option>
+            <option value="EEE">Electrical</option>
+            <option value="MECH">Mechanical</option>
+            <option value="CIVIL">Civil</option>
+        </select>
+        <button type="submit">Start Interview</button>
+    </form>
+</div>
+</body>
+</html>

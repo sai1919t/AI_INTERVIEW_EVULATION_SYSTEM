@@ -1,0 +1,76 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #141E30, #243B55);
+    color: white;
+}
+
+/* CENTER LANDING PAGE */
+.center-box {
+    width: 400px;
+    margin: 120px auto;
+    padding: 40px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0,0,0,0.6);
+}
+
+select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+}
+
+button {
+    margin-top: 20px;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    background: #00c6ff;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #0072ff;
+    transform: scale(1.05);
+}
+
+/* INTERVIEW PAGE */
+.interview-container {
+    width: 70%;
+    margin: 50px auto;
+}
+
+.card {
+    background: rgba(255,255,255,0.08);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+/* RESULT PAGE */
+.result-box {
+    width: 500px;
+    margin: 120px auto;
+    padding: 40px;
+    text-align: center;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+}
+
+.score-box {
+    background: rgba(0,198,255,0.2);
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 15px;
+}

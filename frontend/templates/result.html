@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interview Result</title>
+</head>
+<body>
+
+<h2>Interview Results</h2>
+
+<p><strong>Department:</strong> {{ department }}</p>
+
+<hr>
+
+<h3>Domain Knowledge Score: {{ domain_score }} / 10</h3>
+<h3>Speech Score: {{ speech_score }} / 10</h3>
+<h3>Behaviour Score: {{ behaviour_score }} / 10</h3>
+
+<hr>
+
+<h2>Total Score: {{ total_score }} / 10</h2>
+
+{% if resources %}
+<hr>
+<h3>Recommended Learning Resources</h3>
+<ul>
+    {% for r in resources %}
+        <li><a href="{{ r }}" target="_blank">{{ r }}</a></li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Interview</title>
+</head>
+<body>
+
+<h2>Department: {{ department }}</h2>
+<h3 id="questionBox"></h3>
+
+<video id="preview" width="400" height="300" autoplay muted></video>
+<br><br>
+
+<button id="nextBtn">Next Question</button>
+
+<script>
+
+const questionsData = JSON.parse('{{ questions | tojson | safe }}') || [];
+
+let currentQuestionIndex = 0;
+
+let mediaRecorder;
+let fullSessionChunks = [];
+let allTranscripts = [];
+
+let recognition;
+let currentTranscript = "";
+
+const questionBox = document.getElementById("questionBox");
+const preview = document.getElementById("preview");
+const nextBtn = document.getElementById("nextBtn");
+
+
+// ===============================
+// START CAMERA + FULL SESSION RECORDING
+// ===============================
+async function startCamera() {
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+    });
+
+    preview.srcObject = stream;
+
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = function(event) {
+        if (event.data.size > 0) {
+            fullSessionChunks.push(event.data);
+        }
+    };
+
+    mediaRecorder.start();
+}
+
+
+// ===============================
+// SPEECH RECOGNITION
+// ===============================
+function startSpeechRecognition() {
+
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Speech Recognition not supported. Use Chrome.");
+        return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    currentTranscript = "";
+
+    recognition.onresult = function(event) {
+
+        let transcript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcript += event.results[i][0].transcript;
+        }
+
+        currentTranscript = transcript;
+    };
+
+    recognition.start();
+}
+
+
+// ===============================
+// SHOW QUESTION
+// ===============================
+function showQuestion() {
+
+    if (currentQuestionIndex < questionsData.length) {
+
+        questionBox.innerText =
+            "Question " + (currentQuestionIndex + 1) + ": " +
+            questionsData[currentQuestionIndex].question;
+
+        startSpeechRecognition();
+
+    } else {
+        submitInterview();
+    }
+}
+
+
+// ===============================
+// NEXT BUTTON
+// ===============================
+nextBtn.onclick = function() {
+
+    if (recognition) {
+        recognition.stop();
+    }
+
+    allTranscripts.push(currentTranscript);
+
+    currentQuestionIndex++;
+
+    setTimeout(showQuestion, 800);
+};
+
+
+// ===============================
+// SUBMIT INTERVIEW
+// ===============================
+async function submitInterview() {
+
+    // Stop speech recognition
+    if (recognition) {
+        recognition.stop();
+    }
+
+    // Stop recorder and wait for final data
+    mediaRecorder.onstop = async function() {
+
+        const fullBlob = new Blob(fullSessionChunks, {
+            type: "video/webm"
+        });
+
+        const formData = new FormData();
+
+        formData.append("department", "{{ department }}");
+
+        formData.append(
+            "full_session_video",
+            fullBlob,
+            "full_session.webm"
+        );
+
+        allTranscripts.forEach((text, index) => {
+            formData.append("answer" + (index + 1), text);
+        });
+
+        const response = await fetch("/submit", {
+            method: "POST",
+            body: formData
+        });
+
+        const html = await response.text();
+        document.open();
+        document.write(html);
+        document.close();
+    };
+
+    // Stop recording AFTER setting onstop
+    mediaRecorder.stop();
+
+    // Stop camera
+    const tracks = preview.srcObject.getTracks();
+    tracks.forEach(track => track.stop());
+}
+
+// ===============================
+async function initInterview() {
+    await startCamera();
+    showQuestion();
+}
+
+initInterview();
+
+</script>
+
+</body>
+</html>

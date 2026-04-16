@@ -1,0 +1,13 @@
+Department: CSE
+
+Knowledge Score: 0.6
+Confidence Score: 93.77
+Final Score: 28.55
+Feedback: Needs strong improvement
+
+Weak Areas:
+- What is machine learning?
+- What is polymorphism?
+- What is deadlock prevention?
+
+Recommended Learning Resources:
