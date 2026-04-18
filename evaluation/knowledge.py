@@ -1,36 +1,45 @@
 from sentence_transformers import SentenceTransformer, util
-import numpy as np
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# Load model once
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def evaluate_knowledge(user_answers, questions):
 
-    scores = []
+    total_score = 0
     weak_topics = []
 
-    for q_obj, user_answer in zip(questions, user_answers):
+    for i, q in enumerate(questions):
 
-        question_text = q_obj.get("question", "")
-        reference_answers = q_obj.get("answers", [])
+        user_ans = user_answers[i].strip()
 
-        if not user_answer.strip():
-            scores.append(0)
-            weak_topics.append(question_text)
+        if not user_ans:
+            weak_topics.append(q["question"])
             continue
 
-        student_embedding = model.encode(user_answer, convert_to_tensor=True)
-        reference_embeddings = model.encode(reference_answers, convert_to_tensor=True)
+        correct_answers = q["answers"]
 
-        similarities = util.cos_sim(student_embedding, reference_embeddings)
-        best_score = float(similarities.max())
+        # Encode user answer
+        user_embedding = model.encode(user_ans, convert_to_tensor=True)
 
-        score = round(max(best_score, 0) * 10, 2)
+        max_similarity = 0
 
-        scores.append(score)
+        # Compare with all correct answers
+        for ans in correct_answers:
+            ans_embedding = model.encode(ans, convert_to_tensor=True)
 
-        if score < 5:
-            weak_topics.append(question_text)
+            similarity = util.cos_sim(user_embedding, ans_embedding).item()
 
-    avg_score = round(np.mean(scores), 2) if scores else 0
+            if similarity > max_similarity:
+                max_similarity = similarity
 
-    return avg_score, weak_topics
+        # 🔥 Convert similarity → score
+        score = max_similarity * 10
+        total_score += score
+
+        # Weak if low similarity
+        if max_similarity < 0.5:
+            weak_topics.append(q["question"])
+
+    avg_score = total_score / len(questions)
+
+    return round(avg_score, 2), weak_topics

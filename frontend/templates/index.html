@@ -1,24 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Interview System</title>
+    <title>AI Interview Analyzer</title>
+
+    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 </head>
+
 <body>
-<div class="center-box">
-    <h1>AI Interview Evaluation System</h1>
-    <p>Select your department to begin</p>
-    <form action="/start" method="POST">
-        <select name="department" required>
-            <option value="">Select Department</option>
-            <option value="CSE">Computer Science</option>
-            <option value="ECE">Electronics</option>
-            <option value="EEE">Electrical</option>
-            <option value="MECH">Mechanical</option>
-            <option value="CIVIL">Civil</option>
-        </select>
-        <button type="submit">Start Interview</button>
-    </form>
+    <div class="bg-logo"></div>
+
+<!-- ================= HEADER ================= -->
+<header class="header">
+
+    <div class="logo">
+        <img src="{{ url_for('static', filename='images/logo.png') }}">
+         
+    </div>
+
+    <nav>
+        <a href="/resources">Resources</a>
+        <a href="/about">About Us</a>
+    </nav>
+
+    <div class="auth">
+        {% if logged_in %}
+            <a href="/logout"><button class="btn">Logout</button></a>
+        {% else %}
+            <a href="/login"><button class="btn">Sign In</button></a>
+            <a href="/signup"><button class="btn primary">Sign Up</button></a>
+        {% endif %}
+    </div>
+
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+
+    <h1>
+        Get <span>hired faster</span> with our <br>
+        mock interview practice tool
+    </h1>
+
+    <p>
+        An all-in-one AI-powered platform to practice interviews,
+        receive instant feedback, analyze performance, and build
+        the confidence needed to succeed in real job interviews.
+    </p>
+
+    <button onclick="startPractice()" class="primary-btn">
+        Start Practicing Today
+    </button>
+
+    <br><br>
+
+
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section class="features">
+
+    <h2>
+        Why AI Interview Analyzer is the <br>
+        <span>best interview prep tool</span>
+    </h2>
+
+    <div class="card-container">
+
+        <div class="card">
+            <h3>Unlimited Practice</h3>
+            <p>
+                Practice unlimited mock interviews for any job role,
+                at any time with real-world simulations.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Real Interview Pressure</h3>
+            <p>
+                Simulate real interview scenarios with adaptive questions
+                and time constraints.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>AI-Powered Feedback</h3>
+            <p>
+                Get real-time feedback on answers, confidence,
+                and communication.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ================= QUOTE ================= -->
+<div class="quote-box">
+    A successful interview requires practice and the right tools to build confidence and clarity.
 </div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+
+function startPractice(){
+
+    const loggedIn = "{{ 'true' if logged_in else 'false' }}";
+
+    if(loggedIn === "false"){
+        alert("⚠ Please login or signup first!");
+    } else {
+        window.location.href = "/dashboard";
+    }
+
+}
+
+</script>
+
 </body>
 </html>

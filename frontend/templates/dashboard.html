@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard-container">
+    
+
+    <!-- WELCOME -->
+    <h1>Welcome, {{ session['user'] }}</h1>
+    <p>Ready to crack your interview today?</p>
+
+    <!-- DEPARTMENT SELECTION -->
+    <h2>Select Your Department</h2>
+
+    <div class="dept-container">
+
+    <div class="dept-card" onclick="selectDept(this, 'CSE')">💻 CSE</div>
+    <div class="dept-card" onclick="selectDept(this, 'ECE')">⚡ ECE</div>
+    <div class="dept-card" onclick="selectDept(this, 'EEE')">🔌 EEE</div>
+    <div class="dept-card" onclick="selectDept(this, 'MECH')">⚙️ MECH</div>
+    <div class="dept-card" onclick="selectDept(this, 'CIVIL')">🏗️ CIVIL</div>
+
+    </div>
+
+    <!-- START BUTTON -->
+    <form action="/start" method="POST">
+        <input type="hidden" name="department" id="deptInput">
+        <button id="startBtn" disabled class="primary-btn">
+            Start Interview
+        </button>
+    </form>
+
+    <!-- PERFORMANCE -->
+    <div class="performance">
+    <h3>Previous Performance</h3>
+
+    {% if last_result %}
+        <p>Score: {{ last_result[0] }} / 10</p>
+        <p>Verdict: {{ last_result[1] }}</p>
+    {% else %}
+        <p>Score: -</p>
+        <p>Verdict: -</p>
+    {% endif %}
+
+</div>
+
+    <!-- TIPS -->
+    <div class="tips">
+        <h3>Interview Tips</h3>
+        <ul>
+            <li>Maintain eye contact</li>
+            <li>Speak clearly</li>
+            <li>Avoid filler words</li>
+        </ul>
+    </div>
+    <button onclick="goHome()" class="secondary-btn">⬅ Back</button>
+
+</div>
+
+<script>
+function selectDept(element, dept){
+
+    // remove highlight from all cards
+    const cards = document.querySelectorAll(".dept-card");
+    cards.forEach(card => card.classList.remove("active"));
+
+    // highlight selected card
+    element.classList.add("active");
+
+    // set department value
+    document.getElementById("deptInput").value = dept;
+
+    // enable start button
+    document.getElementById("startBtn").disabled = false;
+}
+
+function goHome(){
+    window.location.href = "/";
+}
+</script>
+
+</body>
+</html>

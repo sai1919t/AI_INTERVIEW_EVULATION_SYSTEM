@@ -2,32 +2,112 @@
 <html>
 <head>
     <title>Interview Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
 
-<h2>Interview Results</h2>
+<div class="result-container">
 
-<p><strong>Department:</strong> {{ department }}</p>
+    <h1>Interview Performance Report</h1>
+    <p>Department: {{ department }}</p>
 
-<hr>
+    <!-- ================= SCORE CARDS ================= -->
+    <div class="score-cards">
 
-<h3>Domain Knowledge Score: {{ domain_score }} / 10</h3>
-<h3>Speech Score: {{ speech_score }} / 10</h3>
-<h3>Behaviour Score: {{ behaviour_score }} / 10</h3>
+        <div class="score-card">
+            <h3>Domain Knowledge</h3>
+            <div class="circle" data-score="{{ domain_score }}"></div>
+            <p>{{ domain_score }}/10</p>
+        </div>
 
-<hr>
+        <div class="score-card">
+            <h3>Communication</h3>
+            <div class="circle" data-score="{{ speech_score }}"></div>
+            <p>{{ speech_score }}/10</p>
+        </div>
 
-<h2>Total Score: {{ total_score }} / 10</h2>
+        <div class="score-card">
+            <h3>Confidence</h3>
+            <div class="circle" data-score="{{ behaviour_score }}"></div>
+            <p>{{ behaviour_score }}/10</p>
+        </div>
 
-{% if resources %}
-<hr>
-<h3>Recommended Learning Resources</h3>
-<ul>
-    {% for r in resources %}
-        <li><a href="{{ r }}" target="_blank">{{ r }}</a></li>
-    {% endfor %}
-</ul>
+    </div>
+
+    <!-- ================= FINAL SCORE ================= -->
+    <div class="final-score">
+        <h2>Total Score: {{ total_score }}/10</h2>
+        <h3 class="verdict">{{ verdict }}</h3>
+    </div>
+
+    <!-- ================= PROGRESS BARS ================= -->
+    <div class="progress-section">
+
+        <div class="progress-box">
+            <span>Domain</span>
+            <div class="bar"><div style="width: {{ (domain_score * 10)|int }}%;"></div></div>
+        </div>
+
+        <div class="progress-box">
+            <span>Speech</span>
+            <div class="bar"><div style="width: {{ (speech_score * 10)|int }}%;"></div></div>
+        </div>
+
+        <div class="progress-box">
+            <span>Behavior</span>
+            <div class="bar"><div style="width: {{ (behaviour_score * 10)|int }}%;"></div></div>
+        </div>
+
+    </div>
+
+    <!-- ================= WEAK TOPICS ================= -->
+    {% if weak_topics %}
+    <div class="weak-topics">
+        <h2>Areas to Improve</h2>
+        <ul>
+            {% for topic in weak_topics %}
+                <li>{{ topic }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ================= RESOURCES ================= -->
+    {% if resources %}
+    <div class="resources">
+        <h3>Recommended Resources</h3>
+
+        <ul>
+            {% for res in resources %}
+                <li>
+                    <a href="{{ res }}" target="_blank">
+                        {{ res }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endif %}
+
+    <!-- ================= ACTION BUTTONS ================= -->
+    <div class="actions">
+        <a href="/dashboard"><button class="primary-btn">Practice Again</button></a>
+        <a href="/"><button class="primary-btn">Go Home</button></a>
+    </div>
+
+</div>
+
+<!-- ================= JS ANIMATION ================= -->
+<script>
+document.querySelectorAll(".circle").forEach(circle => {
+    let score = circle.getAttribute("data-score");
+    let percent = score * 10;
+
+    circle.style.background = `conic-gradient(#6366f1 ${percent}%, #1e293b ${percent}%)`;
+    circle.innerHTML = `<span>${score}</span>`;
+});
+</script>
 
 </body>
 </html>

@@ -2,21 +2,86 @@
 <html>
 <head>
     <title>AI Interview</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            text-align: center;
+        }
+
+        .interview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .question-box {
+            font-size: 22px;
+            margin-bottom: 30px;
+            max-width: 800px;
+        }
+
+        .video-box {
+            border: 4px solid #6366f1;
+            border-radius: 15px;
+            overflow: hidden;
+            width: 500px;
+            height: 350px;
+            box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .next-btn {
+            margin-top: 30px;
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #6366f1;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .next-btn:hover {
+            transform: scale(1.05);
+        }
+
+    </style>
 </head>
+
 <body>
 
-<h2>Department: {{ department }}</h2>
-<h3 id="questionBox"></h3>
+<div class="interview-container">
 
-<video id="preview" width="400" height="300" autoplay muted></video>
-<br><br>
+    <!-- QUESTION -->
+    <div class="question-box" id="questionBox"></div>
 
-<button id="nextBtn">Next Question</button>
+    <!-- WEBCAM -->
+    <div class="video-box">
+        <video id="preview" autoplay muted></video>
+    </div>
 
-<script>
+    <!-- NEXT BUTTON -->
+    <button id="nextBtn" class="next-btn">Next Question</button>
 
-const questionsData = JSON.parse('{{ questions | tojson | safe }}') || [];
+</div>
 
+<script type="text/javascript">
+
+const questionsData = JSON.parse('{{ questions | tojson | safe }}');
 let currentQuestionIndex = 0;
 
 let mediaRecorder;
@@ -30,12 +95,8 @@ const questionBox = document.getElementById("questionBox");
 const preview = document.getElementById("preview");
 const nextBtn = document.getElementById("nextBtn");
 
-
-// ===============================
-// START CAMERA + FULL SESSION RECORDING
-// ===============================
+// ================= CAMERA =================
 async function startCamera() {
-
     const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
@@ -43,7 +104,9 @@ async function startCamera() {
 
     preview.srcObject = stream;
 
-    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "video/webm; codecs=vp8,opus"
+    });
 
     mediaRecorder.ondataavailable = function(event) {
         if (event.data.size > 0) {
@@ -54,17 +117,14 @@ async function startCamera() {
     mediaRecorder.start();
 }
 
-
-// ===============================
-// SPEECH RECOGNITION
-// ===============================
+// ================= SPEECH =================
 function startSpeechRecognition() {
 
     const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-        alert("Speech Recognition not supported. Use Chrome.");
+        alert("Use Chrome browser for speech recognition.");
         return;
     }
 
@@ -88,10 +148,7 @@ function startSpeechRecognition() {
     recognition.start();
 }
 
-
-// ===============================
-// SHOW QUESTION
-// ===============================
+// ================= SHOW QUESTION =================
 function showQuestion() {
 
     if (currentQuestionIndex < questionsData.length) {
@@ -107,10 +164,7 @@ function showQuestion() {
     }
 }
 
-
-// ===============================
-// NEXT BUTTON
-// ===============================
+// ================= NEXT BUTTON =================
 nextBtn.onclick = function() {
 
     if (recognition) {
@@ -121,26 +175,45 @@ nextBtn.onclick = function() {
 
     currentQuestionIndex++;
 
+    // 👉 If last question completed
+    if (currentQuestionIndex === questionsData.length-1) {
+
+        nextBtn.innerText = "Submit";
+
+    }
+
+    // 👉 If user clicks after last question → submit
+    if (currentQuestionIndex > questionsData.length - 1) {
+
+        showLoadingScreen();
+        submitInterview();
+        return;
+    }
+
     setTimeout(showQuestion, 800);
 };
 
-
-// ===============================
-// SUBMIT INTERVIEW
-// ===============================
+// ================= SUBMIT =================
 async function submitInterview() {
 
-    // Stop speech recognition
-    if (recognition) {
-        recognition.stop();
-    }
+    mediaRecorder.stop();
 
-    // Stop recorder and wait for final data
-    mediaRecorder.onstop = async function() {
+    // ✅ WAIT until recording is fully finished
+    mediaRecorder.onstop = async function () {
+
+        const tracks = preview.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
 
         const fullBlob = new Blob(fullSessionChunks, {
             type: "video/webm"
         });
+
+        console.log("Blob size:", fullBlob.size);
+
+        if (fullBlob.size < 1000) {
+            alert("Recording failed! Please try again.");
+            return;
+        }
 
         const formData = new FormData();
 
@@ -166,16 +239,32 @@ async function submitInterview() {
         document.write(html);
         document.close();
     };
-
-    // Stop recording AFTER setting onstop
-    mediaRecorder.stop();
-
-    // Stop camera
-    const tracks = preview.srcObject.getTracks();
-    tracks.forEach(track => track.stop());
 }
+function showLoadingScreen() {
 
-// ===============================
+    preview.style.display = "none";
+
+    const loadingDiv = document.createElement("div");
+
+    loadingDiv.style.width = "400px";
+    loadingDiv.style.height = "300px";
+    loadingDiv.style.display = "flex";
+    loadingDiv.style.justifyContent = "center";
+    loadingDiv.style.alignItems = "center";
+    loadingDiv.style.background = "#1e293b";
+    loadingDiv.style.color = "white";
+    loadingDiv.style.fontSize = "20px";
+    loadingDiv.style.borderRadius = "10px";
+    loadingDiv.style.animation = "fadeIn 1s ease-in-out";
+
+    loadingDiv.innerText = "⏳ Results are loading...";
+
+    preview.parentNode.appendChild(loadingDiv);
+
+    questionBox.innerText = "Analyzing your interview...";
+    nextBtn.style.display = "none";
+}
+// ================= INIT =================
 async function initInterview() {
     await startCamera();
     showQuestion();

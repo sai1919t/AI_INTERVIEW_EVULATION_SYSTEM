@@ -1,36 +1,36 @@
-import librosa
-import numpy as np
+import re
 
 def evaluate_speech(audio_path, transcripts):
 
-    y, sr = librosa.load(audio_path)
+    text = " ".join(transcripts).lower()
 
-    duration = librosa.get_duration(y=y, sr=sr)
+    words = text.split()
+    total_words = len(words)
 
-    total_words = sum(len(t.split()) for t in transcripts if t.strip())
-
-    if duration == 0 or total_words == 0:
+    if total_words == 0:
         return 0
 
-    words_per_minute = (total_words / duration) * 60
+    # 🎯 FILLER WORDS
+    fillers = ["um", "uh", "like", "you know", "aaa", "hmm"]
+    filler_count = sum(text.count(f) for f in fillers)
 
-    # Ideal speaking rate = 120–160 WPM
-    if 120 <= words_per_minute <= 160:
-        fluency_score = 10
-    elif 100 <= words_per_minute <= 180:
-        fluency_score = 8
-    else:
-        fluency_score = 5
+    filler_ratio = filler_count / total_words
 
-    fillers = ["um", "uh", "like", "actually", "you know"]
-    filler_count = sum(
-        t.lower().split().count(f)
-        for t in transcripts
-        for f in fillers
-    )
+    # 🎯 WORD VARIETY
+    unique_words = len(set(words))
+    diversity = unique_words / total_words
 
-    filler_penalty = min(3, filler_count * 0.3)
+    # 🎯 SCORING
+    score = 7
 
-    final_score = max(0, fluency_score - filler_penalty)
+    # penalty
+    if filler_ratio > 0.05:
+        score -= 2
+    if filler_ratio > 0.1:
+        score -= 2
 
-    return round(final_score, 2)
+    # bonus
+    if diversity > 0.6:
+        score += 2
+
+    return max(0, min(score, 10))

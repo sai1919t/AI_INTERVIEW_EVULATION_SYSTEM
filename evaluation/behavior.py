@@ -1,26 +1,27 @@
-from deepface import DeepFace
 import cv2
+from deepface import DeepFace
 
 def evaluate_behavior(video_path):
 
-    cap = cv2.VideoCapture(video_path)
+    try:
+        cap = cv2.VideoCapture(video_path)
 
-    emotion_counter = {
-        "happy": 0,
-        "neutral": 0,
-        "fear": 0,
-        "sad": 0,
-        "angry": 0
-    }
+        emotions = []
 
-    frame_count = 0
+        frame_count = 0
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        while cap.isOpened():
+            ret, frame = cap.read()
 
-        if frame_count % 30 == 0:  # analyze every 30th frame
+            if not ret:
+                break
+
+            frame_count += 1
+
+            # analyze every 20th frame (faster)
+            if frame_count % 20 != 0:
+                continue
+
             try:
                 result = DeepFace.analyze(
                     frame,
@@ -28,26 +29,36 @@ def evaluate_behavior(video_path):
                     enforce_detection=False
                 )
 
-                emotion = result[0]['dominant_emotion']
-
-                if emotion in emotion_counter:
-                    emotion_counter[emotion] += 1
+                emotions.append(result[0]['dominant_emotion'])
 
             except:
-                pass
+                continue
 
-        frame_count += 1
+        cap.release()
 
-    cap.release()
+        if not emotions:
+            return 5
 
-    total = sum(emotion_counter.values())
+        # 🎯 COUNT EMOTIONS
+        happy = emotions.count("happy")
+        neutral = emotions.count("neutral")
+        sad = emotions.count("sad")
+        fear = emotions.count("fear")
 
-    if total == 0:
-        return 0
+        total = len(emotions)
 
-    confidence = (
-        emotion_counter["happy"] +
-        emotion_counter["neutral"]
-    ) / total
+        confidence_ratio = (happy + neutral) / total
 
-    return round(confidence * 10, 2)
+        # 🎯 SCORING
+        if confidence_ratio > 0.75:
+            return 8
+        elif confidence_ratio > 0.5:
+            return 6
+        elif confidence_ratio > 0.3:
+            return 5
+        else:
+            return 3
+
+    except Exception as e:
+        print("Behavior Error:", e)
+        return 5

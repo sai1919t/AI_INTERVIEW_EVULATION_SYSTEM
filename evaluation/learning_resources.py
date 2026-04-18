@@ -30,10 +30,34 @@ def suggest_resources(department, weak_topics):
     if department == "CSE":
         resources.append("https://leetcode.com/")
         resources.append("https://www.geeksforgeeks.org/data-structures/")
+        resources.append("https://www.javatpoint.com/")
+        resources.append("https://www.javatpoint.com/")
+        
 
     if department == "ECE":
         resources.append("https://www.geeksforgeeks.org/digital-electronics-logic-design-tutorials/")
+        resources.append("https://www.javatpoint.com/")
+        resources.append("https://www.w3schools.com/")
 
+
+    if department == "EEE":
+        resources.append("https://www.geeksforgeeks.org/electrical-engineering/")
+        resources.append("https://www.electrical4u.com/")
+        resources.append("https://www.allaboutcircuits.com/")
+
+    if department == "MECH":
+        resources.append("https://www.geeksforgeeks.org/mechanical-engineering/")
+        resources.append("https://www.mechanicaltutorial.com/")
+        resources.append("https://www.youtube.com/results?search_query=mechanical+engineering+tutorial")
+        resources.append("https://www.engineeringtoolbox.com/")
+    
+    if department == "CIVIL":
+        resources.append("https://www.geeksforgeeks.org/civil-engineering/")
+        resources.append("https://www.aboutcivil.org/")
+        resources.append("https://www.youtube.com/results?search_query=civil+engineering+tutorial")
+        resources.append("https://www.engineeringcivil.com/")
+    
+    
     # Topic based links
     for topic in weak_topics:
         topic_lower = topic.lower()
