@@ -3,11 +3,15 @@ from interview.question_selector import select_questions
 from evaluation.final_evaluation import evaluate_all
 from evaluation.learning_resources import suggest_resources
 from database import init_db, register_user, validate_user, save_results, get_last_result
+
 import os
 import uuid
 import subprocess
 import glob
 
+# -----------------------------
+# APP CONFIG
+# -----------------------------
 app = Flask(
     __name__,
     template_folder="frontend/templates",
@@ -16,10 +20,17 @@ app = Flask(
 
 app.secret_key = "smart_interview_secret_key"
 
+# -----------------------------
+# FOLDERS (IMPORTANT FOR RENDER)
+# -----------------------------
 UPLOAD_FOLDER = os.path.abspath("uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# 🔥 DB MUST INIT HERE (NOT INSIDE MAIN)
+init_db()
+
 NUM_QUESTIONS = 10
+
 
 # -----------------------------
 # HOME
@@ -27,6 +38,7 @@ NUM_QUESTIONS = 10
 @app.route("/")
 def home():
     return render_template("index.html", logged_in=("user" in session))
+
 
 # -----------------------------
 # DASHBOARD
@@ -36,26 +48,29 @@ def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    last_result = get_last_result(session["user"])
+    try:
+        last_result = get_last_result(session["user"])
+    except:
+        last_result = None
 
-    return render_template(
-        "dashboard.html",
-        last_result=last_result
-    )
+    return render_template("dashboard.html", last_result=last_result)
+
 
 # -----------------------------
-# ABOUT PAGE
+# ABOUT
 # -----------------------------
 @app.route("/about")
 def about():
     return render_template("about.html")
 
+
 # -----------------------------
-# RESOURCES PAGE
+# RESOURCES
 # -----------------------------
 @app.route("/resources")
 def resources():
     return render_template("resources.html")
+
 
 # -----------------------------
 # SIGNUP
@@ -77,8 +92,9 @@ def signup():
 
     return render_template("signup.html")
 
+
 # -----------------------------
-# LOGIN  ✅ FIXED HERE
+# LOGIN
 # -----------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -94,6 +110,7 @@ def login():
 
     return render_template("login.html")
 
+
 # -----------------------------
 # LOGOUT
 # -----------------------------
@@ -101,6 +118,7 @@ def login():
 def logout():
     session.pop("user", None)
     return redirect(url_for("home"))
+
 
 # -----------------------------
 # START INTERVIEW
@@ -126,50 +144,51 @@ def start_interview():
         questions=questions
     )
 
+
 # -----------------------------
-# VIDEO CONVERSION
+# SAFE VIDEO CONVERSION
 # -----------------------------
 def convert_webm_to_mp4(input_path):
+    try:
+        output_path = input_path.replace(".webm", ".mp4")
 
-    output_path = input_path.replace(".webm", ".mp4")
+        command = [
+            "ffmpeg",
+            "-y",
+            "-i", input_path,
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            output_path
+        ]
 
-    command = [
-        "ffmpeg",
-        "-y",
-        "-i", input_path,
-        "-c:v", "libx264",
-        "-c:a", "aac",
-        output_path
-    ]
+        result = subprocess.run(command, capture_output=True, text=True)
 
-    result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            print("FFMPEG ERROR:", result.stderr)
+            return input_path   # fallback
 
-    if result.returncode != 0:
-        print("FFMPEG ERROR:\n", result.stderr)
-        return None
+        return output_path
 
-    if not os.path.exists(output_path):
-        print("MP4 file not created!")
-        return None
-
-    return output_path
+    except Exception as e:
+        print("Conversion Error:", e)
+        return input_path
 
 
-
+# -----------------------------
+# CLEAN OLD VIDEOS
+# -----------------------------
 def clean_old_videos(folder, max_files=10):
     files = glob.glob(os.path.join(folder, "*"))
-    
-    # Sort by creation time (oldest first)
     files.sort(key=os.path.getctime)
 
-    # Delete extra files
     while len(files) > max_files:
         try:
             os.remove(files[0])
-            print("Deleted old file:", files[0])
             files.pop(0)
         except:
             break
+
+
 # -----------------------------
 # SUBMIT INTERVIEW
 # -----------------------------
@@ -187,19 +206,17 @@ def submit():
 
     # ---------------- VIDEO ----------------
     video = request.files.get("full_session_video")
+    video_path = None
 
-    video_path = None  # ✅ ALWAYS DEFINE
-    clean_old_videos(UPLOAD_FOLDER , max_files=10)  # Clean old videos before saving new one
+    clean_old_videos(UPLOAD_FOLDER, max_files=10)
 
     if video and video.filename != "":
         webm_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}.webm")
         video.save(webm_path)
 
-        print("Saved WEBM:", webm_path)
+        print("Saved:", webm_path)
 
         video_path = convert_webm_to_mp4(webm_path)
-
-        print("Converted MP4:", video_path)
 
     # ---------------- ANSWERS ----------------
     user_answers = []
@@ -210,30 +227,30 @@ def submit():
         user_answers.append(ans)
         transcripts.append(ans)
 
-    # ---------------- SAFE EVALUATION ----------------
+    # ---------------- EVALUATION ----------------
     try:
         avg_k, avg_s, avg_b, final_score, weak_topics, verdict = evaluate_all(
             user_answers,
             questions,
-            video_path,   # can be None now
+            video_path,
             transcripts
         )
     except Exception as e:
         print("Evaluation Error:", e)
 
-        # fallback → only knowledge score
-        avg_k = 5
-        avg_s = 5
-        avg_b = 5
+        avg_k, avg_s, avg_b = 5, 5, 5
         final_score = 5
         weak_topics = []
-        verdict = "Evaluation Partial (Video Failed)"
+        verdict = "Partial Evaluation"
 
     # ---------------- RESOURCES ----------------
     resources = []
     if final_score < 7:
         resources = suggest_resources(department, weak_topics)
+
+    # ---------------- SAVE ----------------
     save_results(session["user"], final_score, verdict)
+
     return render_template(
         "result.html",
         department=department,
@@ -245,11 +262,11 @@ def submit():
         weak_topics=weak_topics,
         resources=resources
     )
+
+
 # -----------------------------
-# RUN SERVER
+# RUN (FOR LOCAL ONLY)
 # -----------------------------
 if __name__ == "__main__":
-    init_db()
-    print("Starting Flask server...")
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
